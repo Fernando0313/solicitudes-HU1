@@ -1,0 +1,4 @@
+routes:
+  paths:
+    solicitud: "/api/v1/solicitud"
+    solicitudById: "/api/v1/solicitud/{id}"
