@@ -46,7 +46,7 @@ class RestConsumerTest {
                 .setResponseCode(HttpStatus.OK.value())
                 .setBody("{\"exists\" : true}")); // cambia el JSON al campo correcto
 
-        var response = restConsumer.getUserByIdentityDocument("12345678");
+        var response = restConsumer.getUserByIdentityDocument("12345678","email","");
 
         StepVerifier.create(response)
                 .expectNextMatches(objectResponse -> objectResponse.isExists()) // accede a exists
@@ -60,7 +60,7 @@ class RestConsumerTest {
         mockBackEnd.enqueue(new MockResponse()
                 .setResponseCode(HttpStatus.NO_CONTENT.value()));
 
-        var response = restConsumer.getUserByIdentityDocument("12345678");
+        var response = restConsumer.getUserByIdentityDocument("12345678","email","");
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable ->
@@ -75,7 +75,7 @@ class RestConsumerTest {
         mockBackEnd.enqueue(new MockResponse()
                 .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value()));
 
-        var response = restConsumer.getUserByIdentityDocument("12345678");
+        var response = restConsumer.getUserByIdentityDocument("12345678","email","");
 
         StepVerifier.create(response)
                 .expectError(WebClientResponseException.class)

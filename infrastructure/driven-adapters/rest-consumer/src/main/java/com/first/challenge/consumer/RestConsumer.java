@@ -1,13 +1,17 @@
 package com.first.challenge.consumer;
 
 import com.first.challenge.model.application.exceptions.BusinessException;
+import com.first.challenge.model.auth.gateways.Role;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -46,14 +50,16 @@ public class RestConsumer /* implements Gateway from domain */{
                 .bodyToMono(ObjectResponse.class);
     }
 
-    public Mono<ObjectResponse> getUserByIdentityDocument(String identityDocument) {
+    public Mono<ObjectResponse> getUserByIdentityDocument(String identityDocument,String email,String bearerToken) {
         logger.info("Iniciando consulta externa de usuario con identityDocument={}", identityDocument);
         return client.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/usuarios")
+                        .path("/solicitud/usuario")
                         .queryParam("identityDocument", identityDocument)
+                        .queryParam("email", email)
                         .build()
                 )
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .retrieve()
                 .onStatus(status -> status.value() == 204, response -> {
                     logger.warn("La API respondió 204 (No Content) para identityDocument={}", identityDocument);
@@ -72,5 +78,16 @@ public class RestConsumer /* implements Gateway from domain */{
                     logger.error("Error en consulta externa de usuario con identityDocument={}. Causa: {}",
                             identityDocument, error.getMessage(), error);
                 });
+    }
+
+    public Mono<Role> findRoleById(UUID roleId, String bearerToken) {
+        return client.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/roles/{id}")
+                        .build(roleId)
+                )
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken) // 👈 se pasa aquí
+                .retrieve()
+                .bodyToMono(Role.class);
     }
 }

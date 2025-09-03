@@ -4,12 +4,13 @@ import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
+import io.r2dbc.postgresql.client.SSLMode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.time.Duration;
-@EnableTransactionManagement
+
 @Configuration
 public class PostgreSQLConnectionPool {
     /* Change these values for your project */
@@ -20,14 +21,28 @@ public class PostgreSQLConnectionPool {
 
 	@Bean
 	public ConnectionPool getConnectionConfig(PostgresqlConnectionProperties properties) {
-		PostgresqlConnectionConfiguration dbConfiguration = PostgresqlConnectionConfiguration.builder()
+		/*PostgresqlConnectionConfiguration dbConfiguration = PostgresqlConnectionConfiguration.builder()
                 .host(properties.host())
                 .port(properties.port())
                 .database(properties.database())
                 .schema(properties.schema())
                 .username(properties.username())
                 .password(properties.password())
-                .build();
+                .build();*/
+        PostgresqlConnectionConfiguration.Builder builder = PostgresqlConnectionConfiguration.builder()
+                .host(properties.host())
+                .port(properties.port())
+                .database(properties.database())
+                .schema(properties.schema())
+                .username(properties.username())
+                .password(properties.password());
+
+        if (Boolean.TRUE.equals(properties.ssl())) {
+            builder.enableSsl(); // 👈 activa SSL antes del build
+            builder.sslMode(SSLMode.REQUIRE);
+        }
+
+        PostgresqlConnectionConfiguration dbConfiguration = builder.build();
 
         ConnectionPoolConfiguration poolConfiguration = ConnectionPoolConfiguration.builder()
                 .connectionFactory(new PostgresqlConnectionFactory(dbConfiguration))

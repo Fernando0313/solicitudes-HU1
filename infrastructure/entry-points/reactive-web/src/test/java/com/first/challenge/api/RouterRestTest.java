@@ -56,7 +56,7 @@ class RouterRestTest {
     @BeforeEach
     void setUp() {
         // Stub del RestConsumer
-        when(restConsumer.getUserByIdentityDocument(anyString()))
+        when(restConsumer.getUserByIdentityDocument(anyString(),"",""))
                 .thenReturn(Mono.just(ObjectResponse.builder().exists(true).build()));
         when(stateUseCase.getStateByName("PENDIENTE"))
                 .thenReturn(Mono.just(new State(UUID.randomUUID(), "PENDIENTE","test")));
@@ -147,7 +147,7 @@ void shouldPostSaveApplication() {
 
     @Test
     void shouldReturnBadRequestWhenExternalUserNotFound() {
-        when(restConsumer.getUserByIdentityDocument(anyString())).thenReturn(Mono.empty());
+        when(restConsumer.getUserByIdentityDocument(anyString(),"","")).thenReturn(Mono.empty());
 
         webTestClient.post()
                 .uri("/api/v1/solicitud")

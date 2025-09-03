@@ -17,12 +17,13 @@ routes:
     solicitudById: "/api/v1/solicitud/{id}"
 adapters:
   r2dbc:
-    host: "localhost"
+    host: "solicituddb.cj0cogi245s2.us-east-1.rds.amazonaws.com"
     port: 5432
     database: "solicitud"
     schema: "public"
     username: "postgres"
     password: "password"
+    ssl: true
 logging:
   level:
     root: "INFO"
@@ -43,11 +44,11 @@ management:
     circuitbreakers:
       enabled: true
 cors:
-  allowed-origins: "http://localhost:4200,http://localhost:8080"
+  allowed-origins: "http://localhost:4200,http://localhost:8080,http://54.162.209.37:8080"
 adapter:
   restconsumer:
     timeout: 5000
-    url: "http://localhost:8080/api/v1"
+    url: "http://54.162.209.37:8080/api/v1"
 resilience4j:
   circuitbreaker:
     instances:
@@ -74,3 +75,7 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+jwt:
+  secret: "MiSuperClaveSecretaJwt_123456789"
+  expiration: 3600000
