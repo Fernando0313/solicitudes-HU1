@@ -13,7 +13,8 @@ import java.util.UUID;
 public class Application {
     private UUID applicationId;
     private BigDecimal amount;
-    private Integer term; //plazo
+    private BigDecimal baseSalary;
+    private Integer term;
     private String email;
     private UUID stateId;
     private UUID loanTypeId;

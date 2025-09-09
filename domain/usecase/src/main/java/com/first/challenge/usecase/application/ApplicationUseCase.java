@@ -1,13 +1,18 @@
 package com.first.challenge.usecase.application;
 
 import com.first.challenge.model.application.Application;
+import com.first.challenge.model.application.dto.PendingDecisionResponse;
 import com.first.challenge.model.application.exceptions.BusinessException;
 import com.first.challenge.model.application.gateways.ApplicationRepository;
+import com.first.challenge.model.application.gateways.NotificationQueueGateway;
+import com.first.challenge.model.criteria.PageResponse;
+import com.first.challenge.model.criteria.SearchCriteria;
 import com.first.challenge.usecase.loantype.LoanTypeUseCase;
 import com.first.challenge.usecase.state.StateUseCase;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
@@ -15,7 +20,8 @@ public class ApplicationUseCase implements IApplicationUseCase{
     private final ApplicationRepository applicationRepository;
     private final LoanTypeUseCase loanTypeUseCase;
     private final StateUseCase stateUseCase;
-
+    private final NotificationQueueGateway notificationQueueGateway;
+    @Override
     public Mono<Application> saveApplication(Application application) {
         return Mono.just(application)
                 .flatMap(this::validateMandatory)
@@ -36,6 +42,50 @@ public class ApplicationUseCase implements IApplicationUseCase{
                         }))
                 .flatMap(applicationRepository::save);
     }
+
+    @Override
+    public Mono<PageResponse<PendingDecisionResponse>> execute(SearchCriteria c) {
+        return applicationRepository.findByCriteria(c)
+                .collectList()
+                .zipWith(applicationRepository.countByCriteria(c))
+                .map(t -> PageResponse.of(t.getT1(), c.getPage(), c.getSize(), t.getT2()));
+    }
+
+    @Override
+    public Mono<Application> updateState(UUID id, String stateName) {
+        return Mono.justOrEmpty(id)
+                .switchIfEmpty(Mono.error(new BusinessException("INVALID_ID", "El id de la aplicación no puede ser nulo")))
+                .flatMap(appId -> {
+                    if (stateName == null || stateName.isBlank()) {
+                        return Mono.error(new BusinessException("INVALID_STATE", "El nombre del estado no puede estar vacío"));
+                    }
+                    return stateUseCase.getStateByName(stateName)
+                            .switchIfEmpty(Mono.error(new BusinessException("STATE_NOT_FOUND",
+                                    "No se encontró el estado: " + stateName)))
+                            .flatMap(state -> applicationRepository.findById(appId)
+                                    .switchIfEmpty(Mono.error(new BusinessException("APPLICATION_NOT_FOUND",
+                                            "No se encontró la aplicación con id: " + appId)))
+                                    .flatMap(application -> {
+                                        application.setStateId(state.getStateId());
+
+                                        return applicationRepository.updateState(application)
+                                                .flatMap(updatedApp ->
+                                                        notificationQueueGateway.sendMessage(
+                                                                updatedApp.getEmail(), // suponiendo que la entidad tiene email
+                                                                "La solicitud " + updatedApp.getApplicationId() +
+                                                                        " cambió a estado: " + stateName
+                                                        ).thenReturn(updatedApp)
+                                                );
+                                    }));
+                });
+    }
+
+
+    @Override
+    public Mono<Application> findById(UUID id) {
+        return applicationRepository.findById(id);
+    }
+
 
     private Mono<Application> validateMandatory(Application application) {
         if (application.getAmount() == null) {

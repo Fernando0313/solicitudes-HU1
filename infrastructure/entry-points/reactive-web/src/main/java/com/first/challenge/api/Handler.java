@@ -1,10 +1,14 @@
 package com.first.challenge.api;
 
+import com.first.challenge.api.dto.GenericCriteriaDto;
 import com.first.challenge.api.dto.LoanApplicationDto;
+import com.first.challenge.api.dto.LoanApplicationStatusUpdateRequest;
 import com.first.challenge.api.mapper.ApplicationDtoMapper;
 import com.first.challenge.consumer.RestConsumer;
 import com.first.challenge.model.application.exceptions.BusinessException;
 import com.first.challenge.model.auth.gateways.JwtTokenGateway;
+import com.first.challenge.model.criteria.PageResponse;
+import com.first.challenge.model.criteria.SearchCriteria;
 import com.first.challenge.model.exception.UnauthorizedAccessException;
 import com.first.challenge.usecase.application.IApplicationUseCase;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -40,16 +45,41 @@ private  final IApplicationUseCase applicationUseCase;
                                 return Mono.error(new UnauthorizedAccessException("El usuario no coincide con el token"));
                             }
 
-                            return restConsumer.getUserByIdentityDocument(dto.identityDocument(), dto.email(),token)
+                            // Consultamos API externa
+                            return restConsumer.getUserByIdentityDocumentAndEmail(dto.identityDocument(), dto.email(), token)
                                     .switchIfEmpty(Mono.error(new BusinessException("DOCUMENT_NOT_FOUND", "Usuario no encontrado en API externa")))
-                                    .map(user -> dto);
+                                    .flatMap(user -> {
+                                        // 1. mapear DTO → Entity
+                                        var entity = applicationDtoMapper.toEntity(dto);
+
+                                        // 2. setear el baseSalary desde el usuario externo
+                                        entity.setBaseSalary(user.getBaseSalary());
+
+                                        // 3. guardar en BD
+                                        return applicationUseCase.saveApplication(entity)
+                                                .map(applicationDtoMapper::toSummary)
+                                                .flatMap(savedDto -> ServerResponse.status(HttpStatus.CREATED)
+                                                        .contentType(MediaType.APPLICATION_JSON)
+                                                        .bodyValue(savedDto));
+                                    });
                         })
-                        .map(applicationDtoMapper::toEntity)
-                        .flatMap(applicationUseCase::saveApplication)
-                        .map(applicationDtoMapper::toSummary)
-                        .flatMap(savedDto -> ServerResponse.status(HttpStatus.CREATED)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(savedDto))
+                );
+    }
+
+    public Mono<ServerResponse> listenSaveList(ServerRequest serverRequest){
+        GenericCriteriaDto dto = GenericCriteriaDto.fromRequest(serverRequest);
+        SearchCriteria criteria = dto.toDomain();
+        return applicationUseCase.execute(criteria)
+                /* 4: serializar y devolver 200 OK */
+                .flatMap(page -> ServerResponse.ok().bodyValue(page));
+    }
+
+    public Mono<ServerResponse> listenUpdate(ServerRequest serverRequest) {
+        return serverRequest.bodyToMono(LoanApplicationStatusUpdateRequest.class)
+                .flatMap(requestDto -> applicationUseCase
+                        .updateState(requestDto.getApplicationId(), requestDto.getStatus())
+                        .flatMap(updatedApp -> ServerResponse.ok().bodyValue(updatedApp))
+
                 );
     }
 }

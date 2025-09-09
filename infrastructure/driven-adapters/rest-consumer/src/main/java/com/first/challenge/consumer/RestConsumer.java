@@ -50,7 +50,7 @@ public class RestConsumer /* implements Gateway from domain */{
                 .bodyToMono(ObjectResponse.class);
     }
 
-    public Mono<ObjectResponse> getUserByIdentityDocument(String identityDocument,String email,String bearerToken) {
+    public Mono<ObjectResponse> getUserByIdentityDocumentAndEmail(String identityDocument,String email,String bearerToken) {
         logger.info("Iniciando consulta externa de usuario con identityDocument={}", identityDocument);
         return client.get()
                 .uri(uriBuilder -> uriBuilder

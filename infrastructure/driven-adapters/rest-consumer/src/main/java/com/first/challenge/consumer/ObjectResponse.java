@@ -6,6 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,5 +17,15 @@ import lombok.Setter;
 @Builder(toBuilder = true)
 public class ObjectResponse {
 
-    private boolean exists;
+    private UUID id;
+    private String firstName;
+    private String lastName;
+    private String identityDocument;
+    private LocalDate birthDate;
+    private String address;
+    private String phoneNumber;
+    private String email;
+    private BigDecimal baseSalary;
+    private UUID roleId;
+    private String password;
 }

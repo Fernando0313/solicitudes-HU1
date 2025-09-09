@@ -19,6 +19,8 @@ public class ApplicationEntity {
     @Column("application_id")
     private UUID applicationId;
     private BigDecimal amount;
+    @Column("base_salary")
+    private BigDecimal baseSalary;
     private Integer term;
     private String email;
     @Column("state_id")
