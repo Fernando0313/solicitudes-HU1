@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface LoanTypeRepository {
     Mono<Boolean> existsById(UUID id);
+    Mono<LoanType> findById(UUID id);
 }

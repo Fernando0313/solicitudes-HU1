@@ -56,12 +56,12 @@ GROUP BY
     s.name, a.base_salary;
 
 INSERT INTO public.loan_type (loan_type_id,"name",minimum_amount,maximum_amount,interest_rate,automatic_validation) VALUES
-	 ('3ce5706d-d01e-44af-b0b4-73e5fec45efe'::uuid,'Préstamo Personal',1000.00,50000.00,12.50,false),
+	 ('3ce5706d-d01e-44af-b0b4-73e5fec45efe'::uuid,'Préstamo Personal',1000.00,50000.00,12.50,true),
 	 ('663bebe7-5013-4f55-b02c-4fbd08d8843e'::uuid,'PrestamoPersonal2',1000.00,50000.00,12.50,false),
 	 ('72ea4243-5c70-4aae-a645-7203e3a3e423'::uuid,'Préstamo Personal',1000.00,20000.00,12.50,true),
 	 ('cc92676e-4017-4f48-a105-5203db1afea5'::uuid,'Préstamo Hipotecario',20000.00,500000.00,8.25,false),
 	 ('fa4bd2c3-3876-4a5b-94c0-3f2cb824d3da'::uuid,'Préstamo Vehicular',5000.00,80000.00,10.00,true),
-	 ('09ad050d-690b-4018-a293-ae7de564ca7a'::uuid,'Préstamo Educativo',2000.00,60000.00,9.75,false),
+	 ('09ad050d-690b-4018-a293-ae7de564ca7a'::uuid,'Préstamo Educativo',2000.00,60000.00,9.75,true),
 	 ('11f49034-046a-4469-84cd-f88a196e8fea'::uuid,'Préstamo Empresarial',10000.00,1000000.00,14.00,false);
 
 
@@ -108,8 +108,10 @@ INSERT INTO application (application_id, amount, base_salary, term, email, state
 (gen_random_uuid(), 450000.00, 18000.00, 180, 'marco.salas@example.com', '6a9259ef-807c-46b7-935c-950f3f5b18ae', 'cc92676e-4017-4f48-a105-5203db1afea5'),
 (gen_random_uuid(), 15000.00, 2500.00, 24, 'angela.paredes@example.com', '032d8ef8-9536-4aeb-ab8f-abe139a05951', '09ad050d-690b-4018-a293-ae7de564ca7a');
 
-INSERT INTO state (name, description)
-VALUES ('PENDIENTE', 'Estado inicial de la solicitud de préstamo');
+INSERT INTO public.state (state_id,"name",description) VALUES
+	 ('6a9259ef-807c-46b7-935c-950f3f5b18ae'::uuid,'PENDIENTE','Estado inicial de la solicitud de préstamo'),
+	 ('032d8ef8-9536-4aeb-ab8f-abe139a05951'::uuid,'APROBADO','Solicitud Aprovada'),
+	 ('fa4126de-6f35-46ec-9fcd-b5aaae99fdc8'::uuid,'RECHAZADO','Solicitud Rechazada');
 
 -- Insert en loan_type de ejemplo
 INSERT INTO loan_type (name, minimum_amount, maximum_amount, interest_rate, automatic_validation)

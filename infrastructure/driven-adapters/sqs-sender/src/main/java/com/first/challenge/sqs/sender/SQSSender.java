@@ -1,6 +1,5 @@
 package com.first.challenge.sqs.sender;
 
-import com.first.challenge.model.application.gateways.NotificationQueueGateway;
 import com.first.challenge.sqs.sender.config.SQSSenderProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -13,7 +12,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 @Service
 @Log4j2
 @RequiredArgsConstructor
-public class SQSSender implements NotificationQueueGateway {
+public class SQSSender /*implements SomeGateway*/ {
     private final SQSSenderProperties properties;
     private final SqsAsyncClient client;
 
@@ -29,20 +28,5 @@ public class SQSSender implements NotificationQueueGateway {
                 .queueUrl(properties.queueUrl())
                 .messageBody(message)
                 .build();
-    }
-
-    @Override
-    public Mono<Void> sendMessage(String email, String message) {
-        // Construimos un JSON como payload
-        String payload = String.format("{\"email\":\"%s\",\"message\":\"%s\"}", email, message);
-
-        SendMessageRequest request = SendMessageRequest.builder()
-                .queueUrl(properties.queueUrl())
-                .messageBody(payload)
-                .build();
-
-        return Mono.fromFuture(() -> client.sendMessage(request))
-                .doOnNext(response -> log.debug("Message sent {}", response.messageId()))
-                .then();
     }
 }

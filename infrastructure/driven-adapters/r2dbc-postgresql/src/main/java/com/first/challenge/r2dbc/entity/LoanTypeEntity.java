@@ -1,9 +1,6 @@
 package com.first.challenge.r2dbc.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
@@ -14,7 +11,7 @@ import java.util.UUID;
 @Table("loan_type")
 @Getter
 @Setter
-//@NoArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
 public class LoanTypeEntity {

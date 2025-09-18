@@ -14,4 +14,9 @@ public class LoanTypeUseCase implements  ILoanTypeUseCase{
     public Mono<Boolean> existsById(UUID id){
         return loanTypeRepository.existsById(id);
     }
+
+    @Override
+    public Mono<LoanType> findById(UUID id) {
+        return loanTypeRepository.findById(id);
+    }
 }

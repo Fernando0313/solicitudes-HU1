@@ -4,6 +4,7 @@ import com.first.challenge.model.application.Application;
 import com.first.challenge.model.application.gateways.ApplicationRepository;
 import com.first.challenge.model.loantype.LoanType;
 import com.first.challenge.model.loantype.gateways.LoanTypeRepository;
+import com.first.challenge.model.state.State;
 import com.first.challenge.r2dbc.entity.ApplicationEntity;
 import com.first.challenge.r2dbc.entity.LoanTypeEntity;
 import com.first.challenge.r2dbc.helper.ReactiveAdapterOperations;
@@ -43,4 +44,24 @@ public class LoanTypeReactiveRepositoryAdapter  extends ReactiveAdapterOperation
                 .doOnSuccess(exists -> logger.info("[LoanTypeReactiveRepositoryAdapter.existsById] el id={} existe={}", id, exists))
                 .doOnError(error -> logger.error("[LoanTypeReactiveRepositoryAdapter.existsById] Error al consultar id={} - Causa: {}", id, error.getMessage(), error));
     }
+
+    @Override
+    public Mono<LoanType> findById(UUID id) {
+        return super.findById(id)
+                .map(entity -> mapper.map(entity, LoanType.class))
+                .doOnSuccess(loanType -> {
+                    if (loanType != null) {
+                        logger.info("[LoanTypeReactiveRepositoryAdapter.findById] Se encontró LoanType con id={}", id);
+                    } else {
+                        logger.info("[LoanTypeReactiveRepositoryAdapter.findById] No existe LoanType con id={}", id);
+                    }
+                })
+                .doOnError(error -> logger.error(
+                        "[LoanTypeReactiveRepositoryAdapter.findById] Error al consultar id={} - Causa: {}",
+                        id,
+                        error.getMessage(),
+                        error
+                ));
+    }
+
 }

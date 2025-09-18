@@ -1,5 +1,7 @@
 package com.first.challenge.consumer.config;
 
+import com.first.challenge.model.secret.SecretModel;
+import com.first.challenge.secretsmanager.adapter.SecretsAdapter;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,18 +19,24 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Configuration
 public class RestConsumerConfig {
 
-    private final String url;
+
 
     private final int timeout;
+    private final SecretsAdapter secretsAdapter;
+    public RestConsumerConfig(
+                              @Value("${adapter.restconsumer.timeout}") int timeout,
+                              SecretsAdapter secretsAdapter) {
 
-    public RestConsumerConfig(@Value("${adapter.restconsumer.url}") String url,
-                              @Value("${adapter.restconsumer.timeout}") int timeout) {
-        this.url = url;
         this.timeout = timeout;
+        this.secretsAdapter = secretsAdapter;
     }
 
     @Bean
     public WebClient getWebClient(WebClient.Builder builder) {
+
+        SecretModel secret = secretsAdapter.getSecrets().block();
+
+        String url = secret.getAuthUrl();
         return builder
             .baseUrl(url)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")

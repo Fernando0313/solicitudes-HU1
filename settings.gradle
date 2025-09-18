@@ -30,3 +30,5 @@ include ':metrics'
 project(':metrics').projectDir = file('./infrastructure/helpers/metrics')
 include ':sqs-sender'
 project(':sqs-sender').projectDir = file('./infrastructure/driven-adapters/sqs-sender')
+include ':secrets-manager'
+project(':secrets-manager').projectDir = file('./infrastructure/driven-adapters/secrets-manager')

@@ -1,13 +1,18 @@
 package com.first.challenge.r2dbc.config;
 
+import com.first.challenge.model.secret.SecretModel;
+import com.first.challenge.secretsmanager.adapter.SecretsAdapter;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.postgresql.client.SSLMode;
+import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
@@ -18,27 +23,28 @@ public class PostgreSQLConnectionPool {
     public static final int MAX_SIZE = 15;
     public static final int MAX_IDLE_TIME = 30;
     public static final int DEFAULT_PORT = 5432;
+    private final SecretsAdapter secretsAdapter;
 
-	@Bean
-	public ConnectionPool getConnectionConfig(PostgresqlConnectionProperties properties) {
-		/*PostgresqlConnectionConfiguration dbConfiguration = PostgresqlConnectionConfiguration.builder()
-                .host(properties.host())
-                .port(properties.port())
-                .database(properties.database())
-                .schema(properties.schema())
-                .username(properties.username())
-                .password(properties.password())
-                .build();*/
+    public PostgreSQLConnectionPool(SecretsAdapter secretsAdapter) {
+        this.secretsAdapter = secretsAdapter;
+    }
+
+
+    @Bean
+    public ConnectionPool connectionPool(PostgresqlConnectionProperties properties) {
+        // 🚨 Bloqueamos SOLO en arranque para inicializar el pool
+        SecretModel secret = secretsAdapter.getSecrets().block();
+
         PostgresqlConnectionConfiguration.Builder builder = PostgresqlConnectionConfiguration.builder()
-                .host(properties.host())
+                .host(secret.getDbSolicitudHost())
                 .port(properties.port())
-                .database(properties.database())
+                .database(secret.getDbSolicitudDatabase())
                 .schema(properties.schema())
-                .username(properties.username())
-                .password(properties.password());
+                .username(secret.getDbSolicitudUser())     // 👈 secret
+                .password(secret.getDbSolicitudpassword()); // 👈 secret
 
         if (Boolean.TRUE.equals(properties.ssl())) {
-            builder.enableSsl(); // 👈 activa SSL antes del build
+            builder.enableSsl();
             builder.sslMode(SSLMode.REQUIRE);
         }
 
@@ -53,6 +59,7 @@ public class PostgreSQLConnectionPool {
                 .validationQuery("SELECT 1")
                 .build();
 
-		return new ConnectionPool(poolConfiguration);
-	}
+        return new ConnectionPool(poolConfiguration);
+    }
+
 }

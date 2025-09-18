@@ -123,4 +123,10 @@ public class ApplicationReactiveRepositoryAdapter extends ReactiveAdapterOperati
 
         return spec.map((row, md) -> row.get(0, Long.class)).one();
     }
+
+    @Override
+    public Flux<Application> findApprovedByEmail(String email) {
+        return repository.findApprovedByEmail(email)
+                .map(entity -> mapper.map(entity, Application.class));
+    }
 }

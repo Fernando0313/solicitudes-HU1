@@ -10,6 +10,7 @@ import com.first.challenge.model.criteria.SearchCriteria;
 import com.first.challenge.usecase.loantype.LoanTypeUseCase;
 import com.first.challenge.usecase.state.StateUseCase;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -21,27 +22,35 @@ public class ApplicationUseCase implements IApplicationUseCase{
     private final LoanTypeUseCase loanTypeUseCase;
     private final StateUseCase stateUseCase;
     private final NotificationQueueGateway notificationQueueGateway;
+
     @Override
     public Mono<Application> saveApplication(Application application) {
         return Mono.just(application)
                 .flatMap(this::validateMandatory)
                 .flatMap(this::validateFormats)
-                .flatMap(validApp -> loanTypeUseCase.existsById(validApp.getLoanTypeId())
-                        .flatMap(exists -> {
-                            if (Boolean.FALSE.equals(exists)) {
-                                return Mono.error(new BusinessException("INVALID_LOAN_TYPE",
-                                        "El tipo de préstamo no existe"));
-                            }
-                            return stateUseCase.getStateByName("PENDIENTE")
-                                    .switchIfEmpty(Mono.error(new BusinessException("STATE_NOT_FOUND",
-                                            "No se encontró el estado PENDIENTE")) )
-                                    .flatMap(state -> {
-                                        validApp.setStateId(state.getStateId());
-                                        return Mono.just(validApp);
-                                    });
-                        }))
-                .flatMap(applicationRepository::save);
+                .flatMap(validApp -> loanTypeUseCase.findById(validApp.getLoanTypeId())
+                        .switchIfEmpty(Mono.error(new BusinessException("INVALID_LOAN_TYPE",
+                                "El tipo de préstamo no existe")))
+                        .flatMap(loanType -> stateUseCase.getStateByName("PENDIENTE")
+                                .switchIfEmpty(Mono.error(new BusinessException("STATE_NOT_FOUND",
+                                        "No se encontró el estado PENDIENTE")))
+                                .flatMap(state -> {
+                                    validApp.setStateId(state.getStateId());
+                                    return applicationRepository.save(validApp)
+                                            .flatMap(savedApp -> {
+                                                if (Boolean.TRUE.equals(loanType.getAutomaticValidation())) {
+                                                    return notificationQueueGateway
+                                                            .sendLoanEvaluationRequest(savedApp)
+                                                            .thenReturn(savedApp);
+                                                }
+                                                return Mono.just(savedApp);
+                                            });
+                                })
+                        )
+                );
     }
+
+
 
     @Override
     public Mono<PageResponse<PendingDecisionResponse>> execute(SearchCriteria c) {
@@ -69,13 +78,27 @@ public class ApplicationUseCase implements IApplicationUseCase{
                                         application.setStateId(state.getStateId());
 
                                         return applicationRepository.updateState(application)
-                                                .flatMap(updatedApp ->
-                                                        notificationQueueGateway.sendMessage(
-                                                                updatedApp.getEmail(), // suponiendo que la entidad tiene email
-                                                                "La solicitud " + updatedApp.getApplicationId() +
-                                                                        " cambió a estado: " + stateName
-                                                        ).thenReturn(updatedApp)
-                                                );
+                                                .flatMap(updatedApp -> {
+                                                    // primero enviamos la notificación normal
+                                                    Mono<Application> notify = notificationQueueGateway.sendMessage(
+                                                            updatedApp.getEmail(),
+                                                            "La solicitud " + updatedApp.getApplicationId() +
+                                                                    " cambió a estado: " + stateName
+                                                    ).thenReturn(updatedApp);
+
+                                                    // si el estado es APROBADO, también enviamos a la cola de aprobados
+                                                    if ("APROBADO".equalsIgnoreCase(stateName)) {
+                                                        return notify.flatMap(app ->
+                                                                notificationQueueGateway.sendApprovedApplication(
+                                                                        app.getApplicationId(),
+                                                                        stateName,
+                                                                        updatedApp.getAmount() // suponiendo que Application tiene getMonto()
+                                                                ).thenReturn(app)
+                                                        );
+                                                    }
+
+                                                    return notify;
+                                                });
                                     }));
                 });
     }
@@ -84,6 +107,11 @@ public class ApplicationUseCase implements IApplicationUseCase{
     @Override
     public Mono<Application> findById(UUID id) {
         return applicationRepository.findById(id);
+    }
+
+    @Override
+    public Flux<Application> findApprovedByEmail(String email) {
+        return applicationRepository.findApprovedByEmail(email);
     }
 
 

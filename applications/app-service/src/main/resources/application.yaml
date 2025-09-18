@@ -17,13 +17,13 @@ routes:
     solicitudById: "/api/v1/solicitud/{id}"
 adapters:
   r2dbc:
-    host: "dbpostgres-pragma"
+    host: "localhost"
     port: 5432
     database: "solicitud"
     schema: "public"
     username: "postgres"
     password: "password"
-    ssl: false
+    ssl: true
 logging:
   level:
     root: "INFO"
@@ -48,13 +48,10 @@ cors:
 adapter:
   restconsumer:
     timeout: 5000
-    url: "http://backend-auth:8080/api/v1"
-#    url: "http://localhost:8080/api/v1"
-
+    url: "http://localhost:8080/api/v1"
   sqs:
     region: "us-east-1"
-    queueUrl: "https://sqs.us-east-1.amazonaws.com/445567089303/PRAGMASQS"#"http://localhost:4566/000000000000/sample"
-    #endpoint: "http://localhost:4566 # For localstack only"
+    queueUrl: "https://sqs.us-east-1.amazonaws.com/445567089303/PRAGMASQS"
 resilience4j:
   circuitbreaker:
     instances:
@@ -84,3 +81,7 @@ springdoc:
 jwt:
   secret: "MiSuperClaveSecretaJwt_123456789"
   expiration: 3600000
+aws:
+  region: ${REGION}
+  secretName: ${SECRET_NAME}
+  secretArn: ${SECRET_ARN}

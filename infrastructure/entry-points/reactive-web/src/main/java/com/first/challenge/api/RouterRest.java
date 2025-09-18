@@ -73,4 +73,9 @@ public class RouterRest {
                 .andRoute(PUT(applicationPath.getSolicitud()), handler::listenUpdate);
     }
 
+    @Bean
+    public RouterFunction<ServerResponse> routerFunctionLambda(Handler handler) {
+        return route(PUT("/api/v1/lambda"), handler::listenUpdate);
+    }
+
 }

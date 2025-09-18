@@ -54,7 +54,7 @@ public class RestConsumer /* implements Gateway from domain */{
         logger.info("Iniciando consulta externa de usuario con identityDocument={}", identityDocument);
         return client.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/solicitud/usuario")
+                        .path("/usuarios")
                         .queryParam("identityDocument", identityDocument)
                         .queryParam("email", email)
                         .build()

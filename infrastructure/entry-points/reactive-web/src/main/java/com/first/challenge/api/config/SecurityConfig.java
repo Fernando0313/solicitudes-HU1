@@ -28,6 +28,7 @@ public class SecurityConfig {
                         .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**", "/swagger-ui.html").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/any-path", "/test").permitAll()
+                        .pathMatchers(HttpMethod.PUT,"/api/v1/lambda").permitAll()
                         .pathMatchers(HttpMethod.POST,"/api/v1/solicitud").hasRole("CLIENT")
                         .pathMatchers(HttpMethod.GET,"/api/v1/solicitud").hasRole("ADVISOR")
                         .pathMatchers(HttpMethod.PUT,"/api/v1/solicitud").hasRole("ADVISOR")
